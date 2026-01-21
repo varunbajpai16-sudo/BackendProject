@@ -1,0 +1,12 @@
+{
+  "name": "ytporject",
+  "version": "1.0.0",
+  "description": "This is a backend project for backend knowledge",
+  "license": "ISC",
+  "author": "Varun Bajpai",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
