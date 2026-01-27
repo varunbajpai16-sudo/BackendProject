@@ -10,10 +10,10 @@ const DB_connect = async () => {
       throw new Error("DB_URI is missing");
     }
 
-    await mongoose.connect(`${process.env.DB_URI}/${database}`);
-    console.log("✅ Database connected successfully");
+   const connected = await mongoose.connect(`${process.env.DB_URI}/${database}`);
+    console.log("✅ MongooDB connected successfully",connected.connection.name);
   } catch (error) {
-    console.log("❌ Database is not connected:", error.message);
+    console.log("❌ MongooDB is not connected:", error.message);
     throw error;
   }
 };
