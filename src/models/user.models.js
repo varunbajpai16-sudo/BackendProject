@@ -25,7 +25,7 @@ const userschema = new mongoose.Schema({
   },    
   
 // Get url from Cloudinary 
-  avater: {
+  avatar: {
     type: String,
     required: true,
   },
@@ -48,12 +48,11 @@ const userschema = new mongoose.Schema({
 })
 
 //Creating save user middleware
-userschema.pre('save', async function (next) {
+userschema.pre('save', async function () {
   if (!this.isModified('password')) {
-    return next()
+    return 
   }
-  this.password = await bcrypt.hash(this.password, 10)
-  next()
+   this.password = await bcrypt.hash(this.password, 10)
 })
 
 //Creating method to compare password
