@@ -4,6 +4,23 @@ import {User} from '../models/user.models.js';
 import apierror from '../utils/apierror.utils.js';
 import uploadToCloudinary from '../utils/cloudinary.js';
 
+const generateToken = async(id)=>{
+    try {
+        const user = await User.findById(id);
+        if(!user){
+            throw new apierror(404,'User not found');
+        }
+        const accesstoken = user.generateaccesstoken();
+        const refreshTokens = user.generaterefreshtoken();
+        user.refreshTokens = refreshTokens;
+        await user.save({validateBeforeSave:false});
+        return {accesstoken,refreshTokens};
+    } catch (error) {
+        console.error('Error generating tokens:', error);
+        throw new apierror(500,'Failed to generate tokens');
+    }
+}
+
 const registerUser = asynchandler(async(req, res) =>{
     // get user details from frontend
     // validation - not empty
@@ -63,10 +80,51 @@ const registerUser = asynchandler(async(req, res) =>{
     console.log(createduser);
     res.
     status(200).
-    json(new apiresponse(200,createduser,"User created sucessfully"))
+    json(new apiresponse(200,"User created sucessfully",createduser));
+})
+
+const loginUser = asynchandler(async(req,res)=>{
+    // req body -> data
+    // username or email
+    //find the user
+    //password check
+    //access and referesh token
+    //send cookie
+
+    const {username,email,password}=req.body;
+    if(!username && !email){
+        throw new apierror(400,"Username or email is required");
+    }
+     
+    const user = await User.findOne({username,email});
+
+    if(!user){
+        throw new apierror(404,"User not found with the given username or email");
+    }
+
+    const ispassword = await user.ispasswordcorrect(password);
+
+    if(!ispassword){
+        throw new apierror(400,"Incorrect password");
+    }
+
+    const {accesstoken,refreshTokens} = await generateToken(user._id);
+
+    const loginuser = await User.findById(user._id).select('-password -refreshTokens');
+
+    const options = {
+        httpOnly:true,
+        secure:true
+    }
+
+    res.
+    status(200).
+    cookie('refreshTokens',refreshTokens,options).
+    cookie('accesstoken',accesstoken,options).
+    json(new apiresponse(200,"User logged in successfully",loginuser));
 })
 
 
 
 
-export default registerUser;
+export {registerUser,loginUser};

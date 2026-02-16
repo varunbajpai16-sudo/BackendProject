@@ -74,7 +74,7 @@ userschema.methods.generateaccesstoken=function(){
 )
 }
 //Creating method to generate jwt (Refreshtoken) token
-userschema.method.generaterefreshtoken=function(){
+userschema.methods.generaterefreshtoken=function(){
     return jwt.sign({
         _id:this._id
     },
