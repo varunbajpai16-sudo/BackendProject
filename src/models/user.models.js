@@ -41,7 +41,7 @@ const userschema = new mongoose.Schema({
   
   watchhistory: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }],
 
-  refreshTokens: {
+  refreshToken: {
     type: String,
   },
 

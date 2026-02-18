@@ -1,6 +1,6 @@
 import {v2 as cloudinary} from 'cloudinary'
 import fs from 'fs'
-
+import path from 'path'
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -12,7 +12,9 @@ export const uploadToCloudinary=async(localfilepath)=>{
         const response=await cloudinary.uploader.upload(localfilepath,{
            resource_type:'auto',
         })
-        fs.unlinkSync(localfilepath)
+        const absolutePath = path.resolve(localfilepath);
+         fs.unlinkSync(absolutePath)
+         console.log('File deleted successfully');
         return response;
     } catch (error) {
         fs.unlinkSync(localfilepath)
