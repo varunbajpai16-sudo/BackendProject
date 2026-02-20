@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(express.static("public"));
 
 app.get("/", (req, res) => {
+  console.log("API is working");
   res.send("API is working");
 });
 app.use("/api/v1/user", userRouter);

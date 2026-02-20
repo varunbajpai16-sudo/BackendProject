@@ -4,6 +4,7 @@ import { User } from '../models/user.models.js'
 import apierror from '../utils/apierror.utils.js'
 import uploadToCloudinary from '../utils/cloudinary.js'
 import jwt from 'jsonwebtoken'
+import { Subscription } from '../models/subscription.models.js'
 
 const generateToken = async (id) => {
   try {
@@ -158,99 +159,257 @@ const logoutUser = asynchandler(async (req, res) => {
     .status(200)
     .clearCookie('refreshToken', options)
     .clearCookie('accesstoken', options)
-    .json(new apiresponse(200,'User logged out successfully'))
+    .json(new apiresponse(200, 'User logged out successfully'))
 
   console.log('User logged out successfully')
 })
 
-const refreshaccessToken = asynchandler(async(req,res)=>{
-    const incomingfreshToken = req.cookies?.refreshToken || req.header("Authorization")?.replace("Bearer ", "")
+const refreshaccessToken = asynchandler(async (req, res) => {
+  const incomingfreshToken =
+    req.cookies?.refreshToken ||
+    req.header('Authorization')?.replace('Bearer ', '')
 
-    if (!incomingfreshToken) {
-      throw new apierror(400, 'Refresh token is required')
-    }
-
-    const decodeduser = jwt.verify(incomingfreshToken, process.env.REFRESH_TOKEN_SECRET)
-
-    const user = await User.findById(decodeduser._id)
-
-    if(!user){
-        throw new apierror(401,'Invalid refresh token')
-    }
-
-    if(user.refreshToken !== incomingfreshToken){
-        throw new apierror(401,'Refresh token is expired, please login again')
-    }
-
-    const {accesstoken,refreshToken} = await generateToken(decodeduser._id);
-
-    const options = {
-      httpOnly: true,
-      secure: true,
-    }
-
-    res.status(200)
-      .cookie('accesstoken', accesstoken, options)
-      .cookie('refreshToken', refreshToken, options)
-      .json(new apiresponse(200,'Access token refreshed successfully'))
-})
-
-const changePassword = asynchandler(async(req,res)=>{
-      const {currentPassword,newPassword} = req.body
-
-      if(!currentPassword || !newPassword){
-        throw new apierror(400,'Current password and new password are required')
-      }
-      
-      const user = await User.findById(req.user._id)
-
-      if(!user){
-        throw new apierror(404,'User not found')
-      }
-
-      const ispassword = await user.ispasswordcorrect(currentPassword)
-
-      if(!ispassword){
-        throw new apierror(400,'Incorrect current password')
-      }
-
-      user.password = newPassword;
-       
-      await user.save({ validateBeforeSave: false })
-
-      res.status(200).json(new apiresponse(200,'Password changed successfully'))
-})
-
-const getuser = asynchandler(async(req,res)=>{
-
-  const user = await User.findById(req.user._id).select('-password -refreshToken')
-
-  if(!user){
-    throw new apierror(404,'User not found')
+  if (!incomingfreshToken) {
+    throw new apierror(400, 'Refresh token is required')
   }
 
-  res.status(200).json(new apiresponse(200,'User details fetched successfully',user))
-  
-})
+  const decodeduser = jwt.verify(
+    incomingfreshToken,
+    process.env.REFRESH_TOKEN_SECRET,
+  )
 
-const updatauserdetails = asynchandler(async(req,res)=>{
-  
-  const {fullname,email} = req.body
+  const user = await User.findById(decodeduser._id)
 
-  if(!fullname || !email){
-    throw new apierror(400,'Fullname and email are required')
+  if (!user) {
+    throw new apierror(401, 'Invalid refresh token')
   }
 
-
-  const updateduser = await User.findByIdAndUpdate(req.user._id,{
-    fullname,
-    email
-  },{new:true}).select('-password -refreshToken')
-
-  if(!updateduser){
-    throw new apierror(404,'User not found')
+  if (user.refreshToken !== incomingfreshToken) {
+    throw new apierror(401, 'Refresh token is expired, please login again')
   }
 
-  res.status(200).json(new apiresponse(200,'User details updated successfully',updateduser))
+  const { accesstoken, refreshToken } = await generateToken(decodeduser._id)
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  }
+
+  res
+    .status(200)
+    .cookie('accesstoken', accesstoken, options)
+    .cookie('refreshToken', refreshToken, options)
+    .json(new apiresponse(200, 'Access token refreshed successfully'))
 })
-export { registerUser, loginUser, logoutUser , refreshaccessToken, changePassword, getuser, updatauserdetails}
+
+const changePassword = asynchandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body
+
+  if (!currentPassword || !newPassword) {
+    throw new apierror(400, 'Current password and new password are required')
+  }
+
+  const user = await User.findById(req.user._id)
+
+  if (!user) {
+    throw new apierror(404, 'User not found')
+  }
+
+  const ispassword = await user.ispasswordcorrect(currentPassword)
+
+  if (!ispassword) {
+    throw new apierror(400, 'Incorrect current password')
+  }
+
+  user.password = newPassword
+
+  await user.save({ validateBeforeSave: false })
+
+  res.status(200).json(new apiresponse(200, 'Password changed successfully'))
+})
+
+const getuser = asynchandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select(
+    '-password -refreshToken',
+  )
+
+  if (!user) {
+    throw new apierror(404, 'User not found')
+  }
+
+  res
+    .status(200)
+    .json(new apiresponse(200, 'User details fetched successfully', user))
+})
+
+const updatauserdetails = asynchandler(async (req, res) => {
+  const { fullname, email } = req.body
+
+  if (!fullname || !email) {
+    throw new apierror(400, 'Fullname and email are required')
+  }
+
+  const updateduser = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      fullname,
+      email,
+    },
+    { new: true },
+  ).select('-password -refreshToken')
+
+  if (!updateduser) {
+    throw new apierror(404, 'User not found')
+  }
+
+  res
+    .status(200)
+    .json(
+      new apiresponse(200, 'User details updated successfully', updateduser),
+    )
+})
+
+const updateavatar = asynchandler(async (req, res) => {
+  const updatedpath = req.file?.path
+
+  if (!updatedpath) {
+    throw new apierror(400, 'Avatar image is required')
+  }
+
+  const updatedavatar = await uploadToCloudinary(updatedpath)
+
+  if (!updatedavatar) {
+    throw new apierror(500, 'Failed to upload avatar image')
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      avatar: updatedavatar.url,
+    },
+    { new: true },
+  ).select('-password -refreshToken')
+
+  if (!user) {
+    throw new apierror(404, 'User not found')
+  }
+  res
+    .status(200)
+    .json(new apiresponse(200, 'User avatar updated successfully', user))
+})
+
+const updatecoverimage = asynchandler(async (req, res) => {
+  const updatedpath = req.file?.path
+
+  if (!updatedpath) {
+    throw new apierror(400, 'Cover image is required')
+  }
+
+  const updatedcoverimage = await uploadToCloudinary(updatedpath)
+
+  if (!updatedcoverimage) {
+    throw new apierror(500, 'Failed to upload cover image')
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      coverimage: updatedcoverimage.url,
+    },
+    {
+      new: true,
+    },
+  ).select('-password -refreshToken')
+
+  if (!user) {
+    throw new apierror(404, 'User not found')
+  }
+
+  res
+    .status(200)
+    .json(new apiresponse(200, 'User cover image updated successfully', user))
+})
+
+const getuserchannelprofile = asynchandler(async (req, res) => {
+  const username = req.params.username
+
+  if (!username?.trim()) {
+    throw new apierror(400, 'Username is required')
+  }
+
+  const channelprofile = await User.aggregate([
+    {
+      $match: {
+        username: username.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: 'subscriptions',
+        localField: '_id',
+        foreignField: 'channel',
+        as: 'subscribers',
+      },
+    },
+    {
+      $lookup: {
+        from: 'subscriptions',
+        localField: '_id',
+        foreignField: 'subscriber',
+        as: 'subscribedto',
+      },
+    },
+    {
+      $addFields: {
+        subscribercount: { $size: '$subscribers' },
+        subscribedtocount: { $size: '$subscribedto' },
+        issubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, '$subscribers.subscriber'] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        subscribercount: 1,
+        subscribedtocount: 1,
+        issubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1,
+      },
+    },
+  ])
+
+  if (!channelprofile?.length) {
+    throw new apierror(404, 'User not found with the given username')
+  }
+  console.log(channelprofile)
+  res
+    .status(200)
+    .json(
+      new apiresponse(
+        200,
+        'User channel profile fetched successfully',
+        channelprofile[0],
+      ),
+    )
+})
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshaccessToken,
+  changePassword,
+  getuser,
+  updatauserdetails,
+  updateavatar,
+  updatecoverimage,
+  getuserchannelprofile,
+}
