@@ -20,6 +20,10 @@ export const verifytoken = asynchandler(async(req,__,next)=>{
 
     const user = await User.findById(decodedtoken._id).select("-password -refreshTokens")
 
+    if(user.accesstoken!==0){
+        throw new apierror(401,"Unauthorized, token expired")
+    }
+    
     if(!user){
         throw new apierror(404,"User not found")
     }

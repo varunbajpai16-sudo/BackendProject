@@ -117,6 +117,9 @@ const loginUser = asynchandler(async (req, res) => {
 
   const { accesstoken, refreshToken } = await generateToken(user._id)
 
+  user.accesstoken = 0
+  await user.save({ validateBeforeSave: false })
+
   const loginuser = await User.findById(user._id).select(
     '-password -refreshToken',
   )
@@ -144,6 +147,7 @@ const logoutUser = asynchandler(async (req, res) => {
       $unset: {
         refreshToken: 1,
       },
+      accesstoken: 1,
     },
     {
       new: true,

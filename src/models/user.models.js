@@ -39,6 +39,11 @@ const userschema = new mongoose.Schema({
     required: true,
   },
   
+  accesstoken:{
+    type:Number,
+    default:0
+  },
+
   watchhistory: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }],
 
   refreshToken: {
