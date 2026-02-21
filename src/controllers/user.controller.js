@@ -5,6 +5,7 @@ import apierror from '../utils/apierror.utils.js'
 import uploadToCloudinary from '../utils/cloudinary.js'
 import jwt from 'jsonwebtoken'
 import { Subscription } from '../models/subscription.models.js'
+import mongoose from 'mongoose'
 
 const generateToken = async (id) => {
   try {
@@ -405,6 +406,56 @@ const getuserchannelprofile = asynchandler(async (req, res) => {
     )
 })
 
+const getwatchhistory = asynchandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      $lookup: {
+        from: 'videos',
+        localField: 'watchhistory',
+        foreignField: '_id',
+        as: 'watchhistory',
+        pipeline: [
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'owner',
+              foreignField: '_id',
+              as: 'owner',
+              pipeline: [
+                {
+                 $project: {
+                fullName: 1,
+                username: 1,
+                avatar: 1,
+              },
+            }
+              ]
+            },
+          },
+        ],
+      },
+    },
+  ])
+
+  if (!user?.length) {
+    throw new apierror(404, 'User not found')
+  }
+  res
+    .status(200)
+    .json(
+      new apiresponse(
+        200,
+        'User watch history fetched successfully',
+        user[0].watchhistory,
+      ),
+    )
+})
+
 export {
   registerUser,
   loginUser,
@@ -416,4 +467,5 @@ export {
   updateavatar,
   updatecoverimage,
   getuserchannelprofile,
+  getwatchhistory
 }

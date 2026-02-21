@@ -9,7 +9,8 @@ import {
   updatauserdetails,
   updateavatar,
   updatecoverimage,
-  getuserchannelprofile
+  getuserchannelprofile,
+  getwatchhistory
 } from '../controllers/user.controller.js'
 import { upload } from '../middlewares/multer.middlewares.js'
 import { verifytoken } from '../middlewares/authentication.middlewares.js'
@@ -42,4 +43,5 @@ router.patch(
   updatecoverimage,
 )
 router.get('/getuserchannelprofile/:username', verifytoken, getuserchannelprofile)
+router.get('/getwatchhistory', verifytoken, getwatchhistory)
 export default router
